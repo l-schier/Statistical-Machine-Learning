@@ -1,10 +1,12 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
+import pandas as pd
 
 from sklearn.svm import SVC
 from sklearn.model_selection import GridSearchCV
-from make_dataset import process_dataset
+from make_dataset import process_dataset_noisy_norm_pca
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, roc_curve, auc
+from pickle import dump, load
 
 def grid_search_svm(X_train, y_train):
     svm = SVC(probability=True, random_state=42)
@@ -28,11 +30,16 @@ def grid_search_svm(X_train, y_train):
     return best_svm
 
 def best_svm(X_train, y_train):
-    svm = SVC(probability=True, random_state=42)
+    svm = SVC(probability=True, random_state=42,)
 
     best_params = {
         'C': 10,
         'gamma': 1,
+        'kernel': 'rbf'
+    }
+    best_params_noisy = {
+        'C': 100,
+        'gamma': 0.1,
         'kernel': 'rbf'
     }
     print("Using best parameters: ", best_params)
@@ -42,9 +49,9 @@ def best_svm(X_train, y_train):
     return svm
 
 
-def evaluate(svm, X_test, y_test, X_train):
+def evaluate_svm(svm, X_test, y_test, X_train, name=""):
 
-    y_pred = best_svm.predict(X_test)
+    y_pred = svm.predict(X_test)
 
     accuracy = accuracy_score(y_test, y_pred)
     precision = precision_score(y_test, y_pred)
@@ -63,9 +70,9 @@ def evaluate(svm, X_test, y_test, X_train):
     plt.xlabel('Predicted Label')
     plt.ylabel('True Label')
     plt.title('Confusion Matrix')
-    plt.savefig("visualization/svm_confusion_matrix.png")
+    plt.savefig("visualization/svm_"+name+"_confusion_matrix.png")
 
-    y_prob = best_svm.predict_proba(X_test)[:, 1]
+    y_prob = svm.predict_proba(X_test)[:, 1]
     fpr, tpr, thresholds = roc_curve(y_test, y_prob)
     roc_auc = auc(fpr, tpr)
 
@@ -79,16 +86,23 @@ def evaluate(svm, X_test, y_test, X_train):
     plt.title('Receiver Operating Characteristic (ROC) Curve')
     plt.legend(loc='lower right')
     plt.grid(True)
-    plt.savefig("visualization/svm_roc_curve.png")
+    plt.savefig("visualization/svm_"+name+"_roc_curve.png")
 
+def save_model(model, path="model/svm.pkl"):
+    with open(path, 'wb') as file:
+        dump(model, file, protocol=5)
+
+def load_model(path="model/svm.pkl"):
+    with open(path, 'rb') as file:
+        return load(file)
 
 if __name__ == "__main__":
     path = "data/Socialmedia_Bot_Prediction_Set1.csv"
     target = "is_bot"
 
-    X_train, X_test, y_train, y_test, noisy_features, features = process_dataset(
+    X_train, X_test, y_train, y_test, noisy_features, features = process_dataset_noisy_norm_pca(
         path, target)
     #best_svm = grid_search_svm(X_train, y_train)
     best_svm = best_svm(X_train, y_train)
-    evaluate(best_svm, X_test, y_test, X_train)
+    evaluate_svm(best_svm, X_test, y_test, X_train)
     print("Done!")
