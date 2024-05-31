@@ -5,14 +5,14 @@ import pandas as pd
 from sklearn.svm import SVC
 from sklearn.model_selection import GridSearchCV
 from make_dataset import process_dataset_noisy_norm_pca
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, roc_curve, auc
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, roc_curve, auc, classification_report
 from pickle import dump, load
+
 
 def grid_search_svm(X_train, y_train):
     svm = SVC(probability=True, random_state=42)
 
     svm.fit(X_train, y_train)
-
 
     param_grid = {
         'C': [0.1, 1, 10, 100],
@@ -20,7 +20,8 @@ def grid_search_svm(X_train, y_train):
         'kernel': ['linear', 'rbf', 'poly', 'sigmoid']
     }
     print("Starting Grid Search with parameters: ", param_grid)
-    grid_search = GridSearchCV(estimator=svm, param_grid=param_grid, cv=3, n_jobs=15, verbose=2)
+    grid_search = GridSearchCV(
+        estimator=svm, param_grid=param_grid, cv=3, n_jobs=15, verbose=2)
 
     grid_search.fit(X_train, y_train)
 
@@ -28,6 +29,7 @@ def grid_search_svm(X_train, y_train):
 
     best_svm = grid_search.best_estimator_
     return best_svm
+
 
 def best_svm(X_train, y_train):
     svm = SVC(probability=True, random_state=42,)
@@ -62,11 +64,12 @@ def evaluate_svm(svm, X_test, y_test, X_train, name=""):
     print(f"Precision: {precision}")
     print(f"Recall: {recall}")
     print(f"F1 Score: {f1}")
-
+    print(classification_report(y_test, y_pred))
     cm = confusion_matrix(y_test, y_pred)
 
     plt.figure(figsize=(8, 6))
-    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=['Not Robot', 'Robot'], yticklabels=['Not Robot', 'Robot'])
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=[
+                'Not Robot', 'Robot'], yticklabels=['Not Robot', 'Robot'])
     plt.xlabel('Predicted Label')
     plt.ylabel('True Label')
     plt.title('Confusion Matrix')
@@ -77,7 +80,8 @@ def evaluate_svm(svm, X_test, y_test, X_train, name=""):
     roc_auc = auc(fpr, tpr)
 
     plt.figure(figsize=(8, 6))
-    plt.plot(fpr, tpr, color='blue', lw=2, label='ROC curve (area = %0.2f)' % roc_auc)
+    plt.plot(fpr, tpr, color='blue', lw=2,
+             label='ROC curve (area = %0.2f)' % roc_auc)
     plt.plot([0, 1], [0, 1], color='gray', linestyle='--')
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.05])
@@ -88,13 +92,16 @@ def evaluate_svm(svm, X_test, y_test, X_train, name=""):
     plt.grid(True)
     plt.savefig("visualization/svm_"+name+"_roc_curve.png")
 
+
 def save_model(model, path="model/svm.pkl"):
     with open(path, 'wb') as file:
         dump(model, file, protocol=5)
 
+
 def load_model(path="model/svm.pkl"):
     with open(path, 'rb') as file:
         return load(file)
+
 
 if __name__ == "__main__":
     path = "data/Socialmedia_Bot_Prediction_Set1.csv"
@@ -102,7 +109,7 @@ if __name__ == "__main__":
 
     X_train, X_test, y_train, y_test, noisy_features, features = process_dataset_noisy_norm_pca(
         path, target)
-    #best_svm = grid_search_svm(X_train, y_train)
+    # best_svm = grid_search_svm(X_train, y_train)
     best_svm = best_svm(X_train, y_train)
     evaluate_svm(best_svm, X_test, y_test, X_train)
     print("Done!")

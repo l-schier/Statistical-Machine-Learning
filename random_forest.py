@@ -5,8 +5,9 @@ import pandas as pd
 from make_dataset import process_dataset_noisy_norm_pca
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, roc_curve, auc
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, roc_curve, auc, classification_report
 from pickle import dump, load
+
 
 def grid_search_rf(X_train, y_train):
     rf = RandomForestClassifier(random_state=42)
@@ -70,6 +71,7 @@ def evaluate_rf(rf, X_test, y_test, X_train, name=""):
     print("Recall: ", recall)
     print("F1 Score: ", f1)
 
+    print(classification_report(y_test, y_pred))
     feature_importances = rf.feature_importances_
     features = X_train.columns
     importance_df = pd.DataFrame(
@@ -108,13 +110,16 @@ def evaluate_rf(rf, X_test, y_test, X_train, name=""):
     plt.grid(True)
     plt.savefig("visualization/random_forest_"+name+"_roc_curve.png")
 
+
 def save_model(model, path="model/random_forest.pkl"):
     with open(path, 'wb') as file:
         dump(model, file, protocol=5)
 
+
 def load_model(path="model/random_forest.pkl"):
     with open(path, 'rb') as file:
         return load(file)
+
 
 if __name__ == "__main__":
     path = "data/Socialmedia_Bot_Prediction_Set1.csv"
